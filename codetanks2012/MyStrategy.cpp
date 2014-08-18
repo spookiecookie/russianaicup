@@ -15,17 +15,44 @@ using namespace std;
 #define MATOMUMO_SPINDULYS 18.0
 #define MAX_ATSTUMAS 9999
 
-double rad2deg(const double rad) { return rad * 180/M_PI; }
+bool gyvasTankas(const Tank& tank); //pasako ar tankas gyvas ir ne mano
+bool kerta(const Tank& self, const Tank& tankas, const Tank& tikrinamas);
+bool sautiGalima(const World& world, const Tank& self, const Tank& taikinys);
 
-double sign(const double a) {
-	if (a > 0) {
-		return 1.0;
-	} else if (a < 0) {
-		return -1.0;
-	} else {
-		return 0;
-	}
+bool gyvasTankas(const Tank& tank) {//pasako ar tankas gyvas ir ne mano
+	return !tank.teammate() && tank.crew_health() > 0 && tank.hull_durability() > 0 ;
 }
+
+bool kerta(const Tank& self, const Tank& tankas, const Tank& tikrinamas) {
+	const double x1 = self.x()  , y1 = self.y()  , //pacio koordinates
+		         x2 = tankas.x(), y2 = tankas.y(),
+				 x0 = tikrinamas.x(), y0 = tikrinamas.y();
+	
+	const double k = -(y1 - y2)/(x2-x1), b = -(x1*y2-x2*y1)/(x2-x1),
+				 r = std::sqrt(tikrinamas.width()*tikrinamas.width() + tikrinamas.height()*tikrinamas.height())/2;
+
+	const double d = std::pow(-2*x0 + 2*k*(b-y0), 2) - 4*(1+k*k)*(x0*x0+ pow(b-y0, 2) - r*r);
+
+	return d>0;
+}
+
+bool sautiGalima(const World& world, const Tank& self, const Tank& taikinys) {
+	//rasti visus negyvus arba mano tankus
+	vector<Tank> tanks = world.tanks();
+	const double atstumas = self.GetDistanceTo(taikinys);	
+	for(size_t i = 0; i < tanks.size(); i++) {
+		Tank tank = tanks.at(i);
+		if (tank.id() != self.id() && tank.id() != taikinys.id() &&
+			self.GetDistanceTo(tank) < atstumas && !gyvasTankas(tank) &&
+			kerta(self, taikinys, tank)) {
+				return false;
+    	}
+	}
+	return true;
+}
+
+double rad2deg(const double rad) { return rad * 180/M_PI; }
+double sign(const double a) { return (a >= 0) ? 1.0 : -1.0; }
 
 long long artimiausiasBonusas (const int tipas, const Tank& self, const World& world) {
 	vector <Bonus> bonuses = world.bonuses();
@@ -84,7 +111,7 @@ long long artimiausiasGyvasTankas(const Tank& self, const World& world) {
 	long long tank_id = 0;
 	for(size_t i = 0; i < tanks.size(); i++) {		
 		Tank tank = tanks.at(i);
-		if (!tank.teammate() && tank.crew_health() > 0 && tank.hull_durability() > 0 && tank.GetDistanceTo(self) < min_atstumas) {
+		if (gyvasTankas(tank) && tank.GetDistanceTo(self) < min_atstumas) {
 			min_atstumas = tank.GetDistanceTo(self);
 			tank_id      = tank.id();
 		}
@@ -124,7 +151,7 @@ long long bonusasTaikinys(const Tank& self, const World& world) {
 		vaziuotiLink = artimiausiaVaistinele(self, world);		
 	}
 
-	if (vaziuotiLink == 0 && remontas(self) < 0.30) {
+	if (vaziuotiLink == 0 && remontas(self) < 0.35) {
 		vaziuotiLink = artimiausiasRemontas(self, world);
 	}
 
@@ -142,8 +169,7 @@ void MyStrategy::Move(Tank self, World world, model::Move& move) {
 	long long vaziuotiLink = bonusasTaikinys(self, world); //bonusas, kurio link vaziuoti	
 
 	// judejimas
-	double posukio_kampas = 0;	
-	posukio_kampas = rad2deg( 
+	double posukio_kampas = rad2deg( 
 		( vaziuotiLink != 0 ) ? self.GetAngleTo(bonusPagalId(vaziuotiLink, world)) : self.GetAngleTo(aGTankas));
 	
 	double left    = 1.0   ,
@@ -171,10 +197,10 @@ void MyStrategy::Move(Tank self, World world, model::Move& move) {
 
 	if (iDesine) {
 		left  =  1.0;
-		right = -1.0; //0.5
+		right = -1.0;
 	} else if (iKaire) {
 		right =  1.0;
-		left  = -1.0; //-0.5
+		left  = -1.0;
 	}
 	
 	move.set_left_track_power(left);
@@ -189,7 +215,7 @@ void MyStrategy::Move(Tank self, World world, model::Move& move) {
 	}
 
 	FireType fire_type;
-	fire_type = ( fabs(boksto_kampas) < MAX_SUVIO_KAMPAS ) ? PREMIUM_PREFERRED : NONE;
+	fire_type = ( fabs(boksto_kampas) < MAX_SUVIO_KAMPAS && sautiGalima(world, self, aGTankas) ) ? PREMIUM_PREFERRED : NONE;
 
 	move.set_turret_turn(turn);
 	move.set_fire_type(fire_type);
