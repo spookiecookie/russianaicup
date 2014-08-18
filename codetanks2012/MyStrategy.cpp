@@ -18,6 +18,8 @@ using namespace std;
 #define MIN_VAISTAI 0.80
 #define MIN_REMONTAS 0.50
 
+int teamSize = 1;
+
 double rad2deg(const double rad);
 
 bool gyvasTankas(const Tank& tank); //pasako ar tankas gyvas ir ne mano
@@ -27,7 +29,7 @@ bool isBetween(const double a, const double b, const double x);
 pair<double, double> kampas(size_t i, const World& world, const Tank& self);
 bool kampasUzimtas(const pair<double, double> xkyk, const World& world);
 
-std::pair<double, double> artimiausiasKampas(const Tank& self, const World& world);
+std::pair<double, double> artimiausiasLaisvasKampas(const Tank& self, const World& world);
 
 bool gyvasTankas(const Tank& tank) {//pasako ar tankas gyvas ir ne mano
 	return !tank.teammate() && tank.crew_health() > 0 && tank.hull_durability() > 0 ;
@@ -41,7 +43,7 @@ double tankoR(const Tank& tankas) {
 //x1, y1, x2, y2 - tieses taskai
 bool kerta(const double x0, const double y0, const double r, const double x1, const double y1, const double x2, const double y2 ) {
 	const double k = -(y1 - y2)/(x2-x1), b = -(x1*y2-x2*y1)/(x2-x1);
-	const double d = std::pow(-2*x0 + 2*k*(b-y0), 2) - 4*(1+k*k)*(x0*x0+ pow(b-y0, 2) - r*r);
+	const double d = std::pow(-2*x0 + 2*k*(b-y0), 2) - 4*(1+k*k)*(x0*x0 + pow(b-y0, 2) - r*r);
 	return d>0;
 }
 
@@ -50,6 +52,20 @@ bool kertaTankas(const Tank& self, const Tank& tankas, const Tank& tikrinamas) {
 			    tankoR(tikrinamas),
 				self.x()  , self.y(),
 				tankas.x(), tankas.y());	
+}
+
+bool kertaObjektas(const Tank& self, const Tank& tankas, const World& world) {
+	vector<Obstacle> obstacles = world.obstacles();	
+	if (obstacles.size() == 0) {
+		return false;
+	} else { 
+		const Obstacle kvadratas = obstacles.at(0);
+		return kerta(
+				kvadratas.x(), kvadratas.y(),
+				kvadratas.height()/2,
+				self.x(), self.y(),
+				tankas.x(), tankas.y());
+	}
 }
 
 bool kertaSovinys(const Tank& self, const Shell& shell) {
@@ -87,118 +103,73 @@ Shell shellPagalId(const long long shell_id, const World& world) {
 	return shells.at(0);
 }
 
-void orientuotiICentra(const Tank& self, const World& world) {
-	const double xc = world.width()/2; const double yc = world.height()/2;
-	self.GetAngleTo(xc, yc);
-}
-
-bool yraLaisvasKampas(const Tank& self, const World& world) {
-	//ar yra nors vienas laisvas kampas
-	return !kampasUzimtas(kampas(0, world, self), world) || !kampasUzimtas(kampas(1, world, self), world) || !kampasUzimtas(kampas(2, world, self), world) || !kampasUzimtas(kampas(3, world, self), world);
-}
-
 bool kampasUzimtas(const pair<double, double> xkyk, const World& world) {
-	//patikrinti ar koks nors tankas yra per 1.5r nuo kampo
+	//patikrinti ar yra nors vienas tankas per tanko r nuo kampo
 	vector<Tank> tanks = world.tanks();
 	for(size_t i=0; i < tanks.size(); i++) {
 		const Tank tank = tanks.at(i);
-		if(!tank.teammate() && gyvasTankas(tank) && tank.GetDistanceTo(xkyk.first,xkyk.second) < 1.5*tankoR(tank)) {
+		if(tank.GetDistanceTo(xkyk.first, xkyk.second) < tankoR(tank)) {
 			return true;
 		}
 	}
 	return false;
 }
 
-std::pair<double, double> kampas(size_t i, const World& world, const Tank& self) {
-
+vector< pair<double, double> > getKampai(const World& world, const Tank& self) {
 	vector< std::pair<double, double> > kampai;
-	const double r = tankoR(self); const double atstumas = 1.5*r;
+	const double r = tankoR(self); const double atstumas = 2*r;
+	const double nuoTS = 4*r; const double nuoAS = 1.5*r;//nuo TolimosSienos, ArtimosSienos
 
-	const double xne = world.width() - atstumas; const double yne = 0 + atstumas; 
+	const double xne = world.width() - atstumas; const double yne = 0 + atstumas;
 	kampai.push_back(make_pair(xne, yne));
+
+	//du papildomi kampai
+	kampai.push_back(make_pair(world.width() - nuoTS, 0 + nuoAS));
+	kampai.push_back(make_pair(world.width() - nuoAS, 0 + nuoTS));
+
 	const double xse = world.width() - atstumas; const double yse = world.height() - atstumas; 
 	kampai.push_back(make_pair(xse, yse));
+
+	kampai.push_back(make_pair(world.width() - nuoAS, world.height() - nuoTS));
+	kampai.push_back(make_pair(world.width() - nuoTS, world.height() - nuoAS));
+
 	const double xsw = 0 + atstumas; const double ysw = world.height() - atstumas; 
 	kampai.push_back(make_pair(xsw, ysw));
+	kampai.push_back(make_pair(0 + nuoTS, world.height() - nuoAS));
+	kampai.push_back(make_pair(0 + nuoAS, world.height() - nuoTS));
+
 	const double xnw = 0 + atstumas; const double ynw = 0 + atstumas; 
 	kampai.push_back(make_pair(xnw, ynw));
+	kampai.push_back(make_pair(0 + nuoAS, 0 + nuoTS));
+	kampai.push_back(make_pair(0 + nuoTS, 0 + nuoAS));
 
-	return kampai.at(i);
+	return kampai;
+}
+
+std::pair<double, double> kampas(size_t i, const World& world, const Tank& self) {
+	return getKampai(world, self).at(i);
 }
 
 double atstumasIkiArtimiausioKampo(const Tank& self, const World& world) {
-	const pair<double, double> xkyk = artimiausiasKampas(self, world);
+	const pair<double, double> xkyk = artimiausiasLaisvasKampas(self, world);
 	return self.GetDistanceTo(xkyk.first, xkyk.second);
-}
-
-double atstumasIkiKampo(const pair<double, double> xkyk, const Tank& self) {
-	return self.GetDistanceTo(xkyk.first, xkyk.second);
-}
-
-std::pair<double, double> artimiausiasKampas(const Tank& self, const World& world) {
-	// NE
-	const double sne = atstumasIkiKampo(kampas(0, world, self), self);
-	// SE
-	const double sse = atstumasIkiKampo(kampas(1, world, self), self);
-	// SW
-	const double ssw = atstumasIkiKampo(kampas(2, world, self), self);
-	// NW
-	const double snw = atstumasIkiKampo(kampas(3, world, self), self);
-
-	double min_atstumas = MAX_ATSTUMAS;	
-
-	size_t ki = 0;
-	//rasti artimiausia kampa
-	if(min_atstumas > sne) {
-		ki = 0; min_atstumas = sne;
-	}
-
-	if(min_atstumas > sse) {
-		ki = 1; min_atstumas = sse;
-	}
-	
-	if(min_atstumas > ssw) {
-		ki = 2; min_atstumas = ssw;
-	}
-
-	if(min_atstumas > snw) {
-		ki = 3; min_atstumas = snw;
-	}
-
-	return kampas(ki, world, self);
 }
 
 std::pair<double, double> artimiausiasLaisvasKampas(const Tank& self, const World& world) {
-	// NE
-	const double sne = atstumasIkiKampo(kampas(0, world, self), self);
-	// SE
-	const double sse = atstumasIkiKampo(kampas(1, world, self), self);
-	// SW
-	const double ssw = atstumasIkiKampo(kampas(2, world, self), self);
-	// NW
-	const double snw = atstumasIkiKampo(kampas(3, world, self), self);
-
 	double min_atstumas = MAX_ATSTUMAS;	
+	vector< pair<double, double> > kampai = getKampai(world, self);
+	size_t kidx = 0;
 
-	size_t ki = 9999;
-	//rasti artimiausia laisva kampa	
-	if(!kampasUzimtas(kampas(0, world, self), world) && min_atstumas > sne) {
-		ki = 0; min_atstumas = sne;
+	for(size_t i = 0; i < kampai.size(); i++) {
+		pair<double, double> xkyk = kampai.at(i);
+		double atstumas = self.GetDistanceTo(xkyk.first, xkyk.second);
+		if (atstumas < min_atstumas && !kampasUzimtas(xkyk, world)) {
+			min_atstumas = atstumas;
+			kidx = i;
+		}
 	}
 
-	if(!kampasUzimtas(kampas(1, world, self), world) && min_atstumas > sse) {
-		ki = 1; min_atstumas = sse;
-	}
-	
-	if(!kampasUzimtas(kampas(2, world, self), world) && min_atstumas > ssw) {
-		ki = 2; min_atstumas = ssw;
-	}
-
-	if(!kampasUzimtas(kampas(3, world, self), world) && min_atstumas > snw) {
-		ki = 3; min_atstumas = snw;
-	}
-
-	return (ki > 4) ? make_pair(0.0,0.0) : kampas(ki, world, self);
+	return kampas(kidx, world, self);
 }
 
 void atsitrauktiIsTrajektorijos(const Tank& self, model::Move& move, const long long shell_id, const World& world) {
@@ -220,15 +191,23 @@ void atsitrauktiIsTrajektorijos(const Tank& self, model::Move& move, const long 
 	move.set_right_track_power(right);
 }
 
+double atstumasIkiObstacle(const Tank& tank, const World& world) { 
+	vector<Obstacle> obstacles = world.obstacles();
+	return (obstacles.size() > 0) ? tank.GetDistanceTo(obstacles.at(0)) : 0.0;
+}
+
 bool sautiGalima(const World& world, const Tank& self, const Tank& taikinys) {
 	//rasti visus negyvus arba mano tankus
 	vector<Tank> tanks = world.tanks();
 	const double atstumas = self.GetDistanceTo(taikinys);	
 	for(size_t i = 0; i < tanks.size(); i++) {
 		Tank tank = tanks.at(i);
-		if (tank.id() != self.id() && tank.id() != taikinys.id() &&
+		if (				
+				(tank.id() != self.id() && tank.id() != taikinys.id() &&
 			self.GetDistanceTo(tank) < atstumas && !gyvasTankas(tank) &&
-			kertaTankas(self, taikinys, tank)) {
+			kertaTankas(self, taikinys, tank)) ||
+				(atstumas > atstumasIkiObstacle(self, world) && kertaObjektas(self, tank, world) )
+				) {
 				return false;
     	}
 	}
@@ -346,17 +325,30 @@ long long bonusasTaikinys(const Tank& self, const World& world) {
 	return vaziuotiLink;
 }
 
-bool arVaziuotiLinkKampo(const Tank& self, const World& world) {
-	//vaziuoti link kampo tada kai priesu daugiau nei 2 ir yra laisvas kampas
-	//kiek priesu
-	size_t priesu = 0;
+size_t priesu(const World& world) {
+	size_t pi = 0;
 	vector<Tank> tanks = world.tanks();
 	for(size_t i = 0; i < tanks.size(); i++) {
 		Tank tank = tanks.at(i);
-		if (gyvasTankas(tank)) {priesu++;}
+		if (gyvasTankas(tank)) {pi++;}
 	}
-	const pair<double, double> xkyk = artimiausiasLaisvasKampas(self, world);	
-	return priesu > 2 && xkyk.first != 0.0 && xkyk.second != 0.0;
+	return pi; 
+}
+
+size_t musu(const World& world) {
+	size_t mi = 0;
+	vector<Tank> tanks = world.tanks();
+	for(size_t i = 0; i < tanks.size(); i++) {
+		Tank tank = tanks.at(i);
+		if (tank.teammate() && tank.crew_health() > 0 && tank.hull_durability() > 0) {mi++;}
+
+	}
+	return mi; 
+}
+
+bool arVaziuotiLinkKampo(const Tank& tank, const World& world) {
+	//vaziuoti link kampo tada kai priesu daugiau nei musu 
+	return (teamSize == 1 && priesu(world) > 2) || (teamSize == 2 && priesu(world) > 3) || (teamSize == 3 && priesu(world) - musu(world) > 0 ) ;
 }
 
 //stovi kampe kai atstumas maziau uz 10
@@ -366,7 +358,6 @@ bool stoviKampe(const Tank& self, const World& world) {
 
 double maxSuvioKampas(const Tank& self, const Tank& taikinys, const World& world) {
 	return self.GetDistanceTo(taikinys) < std::sqrt(world.width()*world.width() + world.height()*world.height()) ? MAX_SUVIO_KAMPAS : MAX_SUVIO_KAMPAS_DIDELIU_ATSTUMU;
-
 }
 
 void MyStrategy::Move(Tank self, World world, model::Move& move) {	
@@ -443,11 +434,6 @@ void MyStrategy::Move(Tank self, World world, model::Move& move) {
 
 	}
 
-	//orientacija
-	if(!iBonusa && !iTaikini && stoviKampe(self, world)) {
-		orientuotiICentra(self, world);
-	}
-
 	// saudymas
 	const double boksto_kampas = rad2deg(self.GetTurretAngleTo(aGTankas));
 	double turn                = 0;
@@ -465,5 +451,6 @@ void MyStrategy::Move(Tank self, World world, model::Move& move) {
 }
 
 TankType MyStrategy::SelectTank(int tank_index, int team_size) {
+	teamSize = team_size;
 	return MEDIUM;
 }
