@@ -15,6 +15,8 @@ using namespace std;
 #define MAX_SUVIO_KAMPAS_DIDELIU_ATSTUMU MAX_SUVIO_KAMPAS/2
 #define MATOMUMO_SPINDULYS 18.0
 #define MAX_ATSTUMAS 9999
+#define MIN_VAISTAI 0.80
+#define MIN_REMONTAS 0.50
 
 double rad2deg(const double rad);
 
@@ -329,11 +331,11 @@ bool vaziuotiAtbulam(const double posukio_kampas, const Tank& self, const long l
 long long bonusasTaikinys(const Tank& self, const World& world) {
 	long long vaziuotiLink = 0;
 
-	if (vaistine(self) < 0.80) {
+	if (vaistine(self) < MIN_VAISTAI) {
 		vaziuotiLink = artimiausiaVaistinele(self, world);		
 	}
 
-	if (vaziuotiLink == 0 && remontas(self) < 0.40) {
+	if (vaziuotiLink == 0 && remontas(self) < MIN_REMONTAS) {
 		vaziuotiLink = artimiausiasRemontas(self, world);
 	}
 
