@@ -12,7 +12,6 @@ using namespace model;
 using namespace std;
 
 #define MAX_SUVIO_KAMPAS 2.85
-#define MAX_SUVIO_KAMPAS_DIDELIU_ATSTUMU MAX_SUVIO_KAMPAS/2
 #define MATOMUMO_SPINDULYS 18.0
 #define MAX_ATSTUMAS 9999
 #define MIN_VAISTAI 0.80
@@ -49,7 +48,7 @@ bool kerta(const double x0, const double y0, const double r, const double x1, co
 
 bool kertaTankas(const Tank& self, const Tank& tankas, const Tank& tikrinamas) {
 	return kerta(tikrinamas.x(), tikrinamas.y(),
-			    tankoR(tikrinamas),
+			    tankoR(tikrinamas)*0.75,
 				self.x()  , self.y(),
 				tankas.x(), tankas.y());	
 }
@@ -62,7 +61,7 @@ bool kertaObjektas(const Tank& self, const Tank& tankas, const World& world) {
 		const Obstacle kvadratas = obstacles.at(0);
 		return kerta(
 				kvadratas.x(), kvadratas.y(),
-				kvadratas.height()/2,
+				kvadratas.height()/2*0.75,
 				self.x(), self.y(),
 				tankas.x(), tankas.y());
 	}
@@ -202,10 +201,9 @@ bool sautiGalima(const World& world, const Tank& self, const Tank& taikinys) {
 	const double atstumas = self.GetDistanceTo(taikinys);	
 	for(size_t i = 0; i < tanks.size(); i++) {
 		Tank tank = tanks.at(i);
-		if (				
-				(tank.id() != self.id() && tank.id() != taikinys.id() &&
+		if ((tank.id() != self.id() && tank.id() != taikinys.id() &&
 			self.GetDistanceTo(tank) < atstumas && !gyvasTankas(tank) &&
-			kertaTankas(self, taikinys, tank)) ||
+			kertaTankas(self, taikinys, tank)) || 
 				(atstumas > atstumasIkiObstacle(self, world) && kertaObjektas(self, tank, world) )
 				) {
 				return false;
@@ -266,6 +264,20 @@ Bonus bonusPagalId(const long long id, const World& world) {
 		}
 	}
 	return bonuses.at(0);
+}
+
+long long artimiausiasGyvasMatomasTankas(const Tank& self, const World& world) {
+	vector <Tank> tanks = world.tanks();
+	double min_atstumas = MAX_ATSTUMAS; 
+	long long tank_id = -1;
+	for(size_t i = 0; i < tanks.size(); i++) {		
+		Tank tank = tanks.at(i);
+		if (gyvasTankas(tank) && sautiGalima(world, self, tank) && tank.GetDistanceTo(self) < min_atstumas ) {
+			min_atstumas = tank.GetDistanceTo(self);
+			tank_id      = tank.id();
+		}
+	}
+	return tank_id;
 }
 
 long long artimiausiasGyvasTankas(const Tank& self, const World& world) {
@@ -347,8 +359,7 @@ size_t musu(const World& world) {
 }
 
 bool arVaziuotiLinkKampo(const Tank& tank, const World& world) {
-	//vaziuoti link kampo tada kai priesu daugiau nei musu 
-	return (teamSize == 1 && priesu(world) > 2) || (teamSize == 2 && priesu(world) > 3) || (teamSize == 3 && priesu(world) - musu(world) > 0 ) ;
+	return (teamSize == 1 && priesu(world) > 2) || (teamSize == 2 && priesu(world) > 3) || (teamSize == 3) ;
 }
 
 //stovi kampe kai atstumas maziau uz 10
@@ -356,14 +367,18 @@ bool stoviKampe(const Tank& self, const World& world) {
 	return atstumasIkiArtimiausioKampo(self, world) < tankoR(self);
 }
 
-double maxSuvioKampas(const Tank& self, const Tank& taikinys, const World& world) {
-	return self.GetDistanceTo(taikinys) < std::sqrt(world.width()*world.width() + world.height()*world.height()) ? MAX_SUVIO_KAMPAS : MAX_SUVIO_KAMPAS_DIDELIU_ATSTUMU;
+void orientuotisIBonusa(const Tank& self, const World& world) {
+	long long b = bonusasTaikinys(self, world);
+	if (b != 0) {
+		self.GetAngleTo(bonusPagalId(b, world));
+	}
 }
 
 void MyStrategy::Move(Tank self, World world, model::Move& move) {	
-	vector <Tank> tanks    = world.tanks();
-
-	Tank aGTankas          = tankasPagalId(artimiausiasGyvasTankas(self, world), world);
+	vector <Tank> tanks  = world.tanks();
+	long long tank_id    = artimiausiasGyvasTankas(self, world);
+	long long agmTank_id = artimiausiasGyvasMatomasTankas(self, world);	
+	model::Tank aGTankas = tankasPagalId( (agmTank_id == -1) ? tank_id : agmTank_id, world );
 	long long vaziuotiLink = bonusasTaikinys(self, world); //bonusas, kurio link vaziuoti	
 
 	// judejimas
@@ -434,10 +449,14 @@ void MyStrategy::Move(Tank self, World world, model::Move& move) {
 
 	}
 
+	if (stoviKampe(self, world)) {
+		orientuotisIBonusa(self, world);
+	}
+
 	// saudymas
 	const double boksto_kampas = rad2deg(self.GetTurretAngleTo(aGTankas));
 	double turn                = 0;
-	const double max_kampas    = maxSuvioKampas(self, aGTankas, world);
+	const double max_kampas    = MAX_SUVIO_KAMPAS;
 	
 	if (fabs(boksto_kampas) > max_kampas) {
 		turn = 1.0 * sign(boksto_kampas) ;
