@@ -16,4 +16,4 @@ http://2013.russianaicup.ru/profile/tankovod
 CodeHockey 2014
 ------------
 Written in Java.
-http://2014.russianaicup.ru/profile/tankovod
+http://russianaicup.ru/profile/tankovod
