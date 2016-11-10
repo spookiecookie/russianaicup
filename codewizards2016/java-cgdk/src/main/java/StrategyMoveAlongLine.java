@@ -2,12 +2,12 @@ import model.*;
 
 /**
  * Created by m.zilenas on 2016-11-08.
+ * This strategy just moves forward and turns on obstacle.
  */
 public class StrategyMoveAlongLine
     extends StrategyMove
 {
     Moves moves = new Moves();
-
     public Moves moves()
     {
         return moves;
@@ -17,8 +17,9 @@ public class StrategyMoveAlongLine
     public void run(Wizard self, World world, Game game, Move move)
     {
         super.run(self, world, game, move);
-        setStrafeSpeed(0);
-        setTurn(0);
+
+        strafe(0);
+        turn(0);
 
         long id = self.getId();
         moves.add(self.getId(), self.getX(), self.getY());
@@ -30,38 +31,11 @@ public class StrategyMoveAlongLine
          */
         if (!moves.hasMoved(id))
         {
-            setTurn();
+            turn();
         }
         else
         {
-            setTurn(0);
+            turn(0);
         }
     }
-
-    void setStrafeSpeed(double strafeSpeed)
-    {
-        super.setStrafeSpeed();
-        move().setStrafeSpeed(strafeSpeed);
-    }
-
-    void setSpeed(double speed)
-    {
-        super.setSpeed();
-        move().setSpeed(speed);
-    }
-
-    /**
-     * If obstacle turn right and make step forward.
-     */
-    void setTurn(double angle)
-    {
-        super.setTurn(angle);
-    }
-
-    @Override
-    void setTurn()
-    {
-        super.setTurn();
-    }
-
 }

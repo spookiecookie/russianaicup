@@ -9,10 +9,8 @@ import model.World;
 public interface IStrategy
 {
     Wizard self();
-    World world();
-    Game game();
-    Move move();
+     World world();
+      Game game();
+      Move move();
     void run(Wizard wizard, World world, Game game, Move move);
-
-    void turn(double turn);
 }

@@ -1,0 +1,28 @@
+<component name="ArtifactManager">
+  <artifact build-on-make="true" name="unnamed">
+    <output-path>$PROJECT_DIR$/out/artifacts/unnamed</output-path>
+    <root id="root">
+      <element id="archive" name="archive.zip">
+        <element id="file-copy" path="$PROJECT_DIR$/src/main/java/AbstractStrategy.java" />
+        <element id="file-copy" path="$PROJECT_DIR$/src/main/java/IStrategy.java" />
+        <element id="file-copy" path="$PROJECT_DIR$/src/main/java/MyStrategy.java" />
+        <element id="file-copy" path="$PROJECT_DIR$/src/main/java/Strategy.java" />
+        <element id="file-copy" path="$PROJECT_DIR$/src/main/java/StrategyMove.java" />
+        <element id="file-copy" path="$PROJECT_DIR$/src/main/java/Detection.java" />
+        <element id="file-copy" path="$PROJECT_DIR$/src/main/java/Distance.java" />
+        <element id="file-copy" path="$PROJECT_DIR$/src/main/java/Moves.java" />
+        <element id="file-copy" path="$PROJECT_DIR$/src/main/java/MovesTest.java" />
+        <element id="file-copy" path="$PROJECT_DIR$/src/main/java/Obstacles.java" />
+        <element id="file-copy" path="$PROJECT_DIR$/src/main/java/StrategyMoveAlongLine.java" />
+        <element id="file-copy" path="$PROJECT_DIR$/src/main/java/AbstractShootStrategy.java" />
+        <element id="file-copy" path="$PROJECT_DIR$/src/main/java/CompoundStrategy.java" />
+        <element id="file-copy" path="$PROJECT_DIR$/src/main/java/Parameters.java" />
+        <element id="file-copy" path="$PROJECT_DIR$/src/main/java/RemoteProcessClient.java" />
+        <element id="file-copy" path="$PROJECT_DIR$/src/main/java/Runner.java" />
+        <element id="file-copy" path="$PROJECT_DIR$/src/main/java/StrategyShoot.java" />
+        <element id="file-copy" path="$PROJECT_DIR$/src/main/java/StrategyShootNearest.java" />
+        <element id="file-copy" path="$PROJECT_DIR$/src/main/java/Targets.java" />
+      </element>
+    </root>
+  </artifact>
+</component>

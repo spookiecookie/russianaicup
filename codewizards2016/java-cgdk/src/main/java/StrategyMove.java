@@ -12,29 +12,9 @@ public class StrategyMove
     {
         super.run(self,world,game,move);
 
-        setSpeed();
-        setStrafeSpeed();
-        setTurn();
-        move.setAction(ActionType.NONE);
-    }
-
-    void setSpeed()
-    {
-        move().setSpeed(game().getWizardForwardSpeed());
-    }
-
-    void setTurn(double angle)
-    {
-        turn(angle);
-    }
-
-    void setTurn()
-    {
-        turn(game().getWizardMaxTurnAngle());
-    }
-
-    void setStrafeSpeed()
-    {
-        move().setStrafeSpeed(game().getWizardStrafeSpeed());
+        speed();
+        strafe();
+        turn();
+        action(ActionType.NONE);
     }
 }

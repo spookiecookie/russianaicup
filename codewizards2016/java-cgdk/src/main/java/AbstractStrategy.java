@@ -2,6 +2,7 @@ import model.Game;
 import model.Move;
 import model.Wizard;
 import model.World;
+import model.ActionType;
 
 /**
  * Created by m.zilenas on 2016-11-08.
@@ -14,9 +15,25 @@ public class AbstractStrategy
     private Game _game;
     private Move _move;
 
+    public Parameters parameters()
+    {
+        return parameters;
+    }
+
+    public AbstractStrategy setParameters(Parameters parameters)
+    {
+        this.parameters = parameters;
+        return this;
+    }
+
+    private Parameters parameters;
+
+    /**
+     * do not pass self, world, game, move because they are recreated on each tick.
+     */
     public AbstractStrategy()
     {
-    } //do not pass self, world, game, move because they are recreated on each tick.
+    }
 
     public Wizard self()
     {
@@ -38,6 +55,13 @@ public class AbstractStrategy
         return _move;
     }
 
+    /**
+     * Does not much.
+     * @param self
+     * @param world
+     * @param game
+     * @param move
+     */
     @Override
     public void run(Wizard self, World world, Game game, Move move)
     {
@@ -47,8 +71,43 @@ public class AbstractStrategy
          _move = move;
     }
 
+    public void speed(double speed)
+    {
+        move().setSpeed(speed);
+    }
+
+    public void speed()
+    {
+        speed(game().getWizardForwardSpeed());
+    }
+
     public void turn(double turn)
     {
         move().setTurn(turn);
+    }
+
+    public void turn()
+    {
+        turn(game().getWizardMaxTurnAngle());
+    }
+
+    public void strafe()
+    {
+        strafe(game().getWizardStrafeSpeed());
+    }
+
+    public void strafe(double strafe)
+    {
+        move().setStrafeSpeed(strafe);
+    }
+
+    public void action()
+    {
+        action(ActionType.NONE);
+    }
+
+    public void action(ActionType action)
+    {
+        move().setAction(action);
     }
 }
