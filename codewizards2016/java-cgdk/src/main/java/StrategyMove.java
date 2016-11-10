@@ -15,6 +15,6 @@ public class StrategyMove
         speed();
         strafe();
         turn();
-        action(ActionType.NONE);
+        action();
     }
 }

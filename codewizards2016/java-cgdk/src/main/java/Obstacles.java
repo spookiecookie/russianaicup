@@ -26,44 +26,33 @@ public class Obstacles
     }
 
     /**
-     * A container for wall objects. A wall object is with radius 1.
+     * Wall segment.
      */
     private static class WallSegment
+        extends CircularUnit
     {
-        double x, y;
-
-        public double x()
-        {
-            return x;
-        }
-
-        public void setX(double x)
-        {
-            this.x = x;
-        }
-
-        public double y()
-        {
-            return y;
-        }
-
-        public void setY(double y)
-        {
-            this.y = y;
-        }
-
-        public double radius()
-        {
-            return radius;
-        }
-
-        final double radius = 1;
+        public static final double RADIUS = 1;
 
         public WallSegment(double x, double y)
         {
-            setX(x);
-            setY(y);
+            super(1,x,y,0,0,0,Faction.OTHER, RADIUS);
         }
+    }
+
+    public static WallSegment nearestWallSegment(Unit unit)
+    {
+        List<WallSegment> list = new LinkedList<>(Walls.segments);
+        Collections.sort(list, new ComparatorDistance(unit));
+        return ((Deque<WallSegment>)list).peekFirst();
+    }
+
+    public static boolean isNearWall(Unit unit)
+    {
+        double near = ((CircularUnit) unit).getRadius() * 8.0;
+        return unit.getX() <= near
+                || unit.getX() >= Walls.worldX - near
+                || unit.getY() <= near
+                || unit.getY() >= Walls.worldY - near;
     }
 
     /**
@@ -73,21 +62,22 @@ public class Obstacles
     {
         static final double worldX = 4000;
         static final double worldY = 4000;
-        static List<WallSegment> segments;
+        static final double ws = worldX/10;
+        static List<WallSegment> segments = new LinkedList<>();
 
         static
         {
-            for (int x = 0; x < worldX; x++)
+            for (int i = 0; i < ws; i++)
             {
-                for (int y = 0; y < worldY; y++)
-                {
-                    segments.add(new WallSegment(x,y));
-                }
+                segments.add(new WallSegment(i , 0)) ;
+                segments.add(new WallSegment(ws, i));
+                segments.add(new WallSegment(ws-i ,ws)) ;//ws-i will run from the right to the left
+                segments.add(new WallSegment(0 , ws-i));
             }
         }
     }
 
-    private class WallDetector
+    private class WallDetctor
     {
         final int N = 360; //number of rays
         List<Point2D.Double> walls;

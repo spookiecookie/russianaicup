@@ -12,7 +12,7 @@ public class StrategyShootNearest
     {
         super.run(self, world, game, move);
         //Look around for the possible targets
-        LivingUnit target = new Targets(world, game, self).wizards().foes().distance().visible().shootable().firstOrNull();
+        LivingUnit target = new Targets(world, game, self).wizardsAndMinions().foes().health().visible().shootable().firstOrNull();
         if (target == null)
         {
             return;

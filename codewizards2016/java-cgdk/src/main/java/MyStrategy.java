@@ -23,6 +23,12 @@ public final class MyStrategy
                         new Parameters()
                             .turnsSmoothly(true)
                     )
+                    , new StrategyMoveStealth()
+                    .setParameters(
+                            new Parameters()
+                                    .setDisableNearWall(true)
+                                    .turnsSmoothly(false)
+                    )
                     , new StrategyShootNearest()
             );
 

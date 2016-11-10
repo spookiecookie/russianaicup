@@ -76,9 +76,44 @@ public class AbstractStrategy
         move().setSpeed(speed);
     }
 
-    public void speed()
+    /**
+     * Strafe right.
+     */
+    public void strafeRight()
+    {
+        strafe(+1.0*game().getWizardStrafeSpeed());
+    }
+
+    /**
+     * Strafe left.
+     */
+    public void strafeLeft()
+    {
+        strafe(-1.0*game().getWizardStrafeSpeed());
+    }
+    /**
+     * Turns right.
+     */
+    public void right()
+    {
+        turn(game().getWizardMaxTurnAngle());
+    }
+
+    /**
+     * Moves forward.
+     */
+    public void forward()
     {
         speed(game().getWizardForwardSpeed());
+    }
+
+    public void backward()
+    {
+        speed(game().getWizardBackwardSpeed());
+    }
+
+    public void speed()
+    {
     }
 
     public void turn(double turn)
@@ -88,12 +123,10 @@ public class AbstractStrategy
 
     public void turn()
     {
-        turn(game().getWizardMaxTurnAngle());
     }
 
     public void strafe()
     {
-        strafe(game().getWizardStrafeSpeed());
     }
 
     public void strafe(double strafe)
@@ -103,7 +136,6 @@ public class AbstractStrategy
 
     public void action()
     {
-        action(ActionType.NONE);
     }
 
     public void action(ActionType action)

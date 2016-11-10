@@ -31,10 +31,12 @@ public class StrategyMoveAlongLine
          */
         if (!moves.hasMoved(id))
         {
-            turn();
+            forward();
+            right();
         }
         else
         {
+            forward();
             turn(0);
         }
     }
