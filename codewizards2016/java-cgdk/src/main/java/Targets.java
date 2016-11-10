@@ -14,9 +14,19 @@ public class Targets
     {
         private List<LivingUnit> targets = new LinkedList<>();
 
-        public TargetsCollection(List<LivingUnit> targets)
+        public TargetsCollection(List<LivingUnit>... targets)
         {
-            this.targets = new LinkedList<>(targets);
+            for (List<LivingUnit> list : targets)
+            {
+                if (this.targets == null)
+                {
+                    this.targets = new LinkedList<LivingUnit>(list);
+                }
+                else
+                {
+                    this.targets.addAll(list);
+                }
+            }
         }
 
         public List<LivingUnit> getTargets()
@@ -199,6 +209,12 @@ public class Targets
     public List<LivingUnit> wizardsList()
     {
         return new LinkedList<>(Arrays.asList(getWorld().getWizards()));
+    }
+
+
+    public TargetsCollection wizardsAndMinions()
+    {
+        return new TargetsCollection(wizardsList(), minionsList());
     }
 
     public TargetsCollection wizards()
