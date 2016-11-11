@@ -21,15 +21,21 @@ public final class MyStrategy
                     new StrategyMoveAlongLine()
                     .setParameters(
                         new Parameters()
-                            .turnsSmoothly(true)
+                            .setTurnsSmoothly(true)
                     )
+                    , new StrategyShootNearest()
                     , new StrategyMoveStealth()
                     .setParameters(
                             new Parameters()
                                     .setDisableNearWall(true)
-                                    .turnsSmoothly(false)
+                                    .setWallDistanceFactor(3.0)
+                                    .setTurnsSmoothly(true)
                     )
-                    , new StrategyShootNearest()
+                    , new StrategyMoveCollisionAvoidance()
+                        .setParameters(new Parameters()
+                                .setMaxAvoidForce(100.0)
+                                .setTurnsSmoothly(false)
+                        )
             );
 
         setStrategy(strategy);

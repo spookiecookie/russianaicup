@@ -9,20 +9,262 @@ import java.awt.geom.Point2D;
 public class Obstacles
 {
     private LivingUnit unit;
+    private World world;
+    private Game game;
+    private Parameters parameters;
 
-    public Obstacles(LivingUnit unit)
+    public Obstacles(LivingUnit unit, World world, Game game)
     {
         setUnit(unit);
+        setWorld(world);
+        setGame(game);
     }
 
+    public Parameters parameters()
+    {
+        return parameters;
+    }
+
+    public Obstacles setParameters(Parameters parameters)
+    {
+        this.parameters = parameters;
+        return this;
+    }
+
+    public World world()
+    {
+        return world;
+    }
+
+    public void setWorld(World world)
+    {
+        this.world = world;
+    }
+
+    public Game game()
+    {
+        return game;
+    }
+
+    public void setGame(Game game)
+    {
+        this.game = game;
+    }
+
+    public class Vector
+    {
+        public boolean isZero()
+        {
+            return norm() == 0.0;
+        }
+
+        public List<Double> getList()
+        {
+            return list;
+        }
+
+        public String toString()
+        {
+            return Arrays.toString(getList().toArray());
+        }
+
+        public void setList(List<Double> list)
+        {
+            this.list = list;
+        }
+
+        List<Double> list = new LinkedList<>();
+
+        public Vector(Unit unit)
+        {
+            this(unit.getX(), unit.getY());
+        }
+
+        public Vector(double... vals)
+        {
+            for(Double value : vals)
+            {
+                list.add(value);
+            }
+        }
+
+        public int size()
+        {
+            return getList().size();
+        }
+
+        public Double a1()
+        {return a(0);}
+
+        public Double a2()
+        {
+            return a(1);
+        }
+        public Double a(int i)
+        {
+            return getList().get(i);
+        }
+
+        public Vector(List<Double> list)
+        {
+            this.list = new LinkedList<>(list);
+        }
+
+        public Vector multiplied(double value)
+        {
+            Vector vector = new Vector(size(), value);
+            return multiplied(vector);
+        }
+
+        public Vector multiplied(Vector vector)
+        {
+            List<Double> list = new LinkedList<>(getList());
+            ListIterator<Double> iterator = list.listIterator();
+            Iterator<Double> itVector = vector.getList().iterator();
+
+            double norm = norm();
+            while(iterator.hasNext())
+            {
+                double value = iterator.next();
+                iterator.set(value*itVector.next());
+            }
+            return new Vector(list);
+        }
+
+        public Vector (int size, double initialValue)
+        {
+            list = new LinkedList<>();
+            for (int i = 0; i < size; i++)
+            {
+                list.add(initialValue);
+            }
+        }
+
+        public Vector added(Vector vector)
+        {
+            List<Double> list = new LinkedList<>(getList());
+            ListIterator<Double> iterator = list.listIterator();
+            Iterator<Double> itVector = vector.getList().iterator();
+
+            double norm = norm();
+            while(iterator.hasNext())
+            {
+                double value = iterator.next();
+                iterator.set(value+itVector.next());
+            }
+            return new Vector(list);
+        }
+
+        public Vector normalized()
+        {
+            List<Double> list = new LinkedList<>(getList());
+            ListIterator<Double> iterator = list.listIterator();
+            double norm = norm();
+            while(iterator.hasNext())
+            {
+                double value = iterator.next();
+                iterator.set(value/norm);
+            }
+            return new Vector(list);
+        }
+
+        public Vector half()
+        {
+            return multiplied(0.5);
+        }
+
+        public double norm()
+        {
+            double sum = 0.0;
+            for(Double val : getList())
+            {
+                sum = Math.pow(val,2);
+            }
+            return Math.sqrt(sum);
+        }
+
+        //Not real distance
+        public double distance(Vector vector)
+        {
+            return Math.sqrt(Math.pow(a1()-vector.a1(),2) + Math.pow(a2()-vector.a2(),2));
+        }
+    }
     /**
      * Check radius.
      * @return
      */
-    boolean ahead()
+//    boolean ahead()
+//    {
+//        double radius = getUnit().getRadius();
+//        return false;
+//    }
+
+    public double maxSeeAhead()
     {
-        double radius = getUnit().getRadius();
-        return false;
+        return unit.getRadius()*parameters().maxSeeAheadFactor();
+    }
+
+    public Vector avoidanceForce()
+    {
+        Vector avoidanceForce = new Vector(2,0.0);
+        CircularUnit mostThreatening = mostThreatening(new Targets(world(),game(),unit).livingUnits());
+        if (mostThreatening != null)
+        {
+            avoidanceForce = ahead()
+                .added(
+                        new Vector(mostThreatening).multiplied(-1.0))
+                .normalized()
+                .multiplied(parameters.maxAvoidForce());
+        }
+        else
+        {
+            avoidanceForce.multiplied(0.0);
+        }
+        return avoidanceForce;
+    }
+
+    /**
+     * Finds most threatening object for collision detection.
+     * @return
+     */
+    public CircularUnit mostThreatening(Targets.TargetsCollection units)
+    {
+        CircularUnit mostThreatening = null;
+        for (CircularUnit underExamination : units.distance().list())
+        {
+            boolean collision = intersects(underExamination);
+            if (collision)
+            {
+                mostThreatening = underExamination;
+                break;
+            }
+        }
+        return mostThreatening;
+    }
+
+    public boolean intersects(CircularUnit obstacle)
+    {
+        return ahead().distance(new Vector(obstacle)) <= obstacle.getRadius()
+                || ahead2().distance((new Vector(obstacle))) <= obstacle.getRadius();
+    }
+
+    public Vector ahead()
+    {
+        //https://gamedevelopment.tutsplus.com/tutorials/understanding-steering-behaviors-collision-avoidance--gamedev-7777
+        //ahead = position + normalize(velocity) * MAX_SEE_AHEAD
+        Vector ahead = new Vector(unit.getX(), unit.getY())
+                .added(
+                        new Vector(unit.getSpeedX(), unit.getSpeedY())
+                                .normalized()
+                                .multiplied(new Vector(2, maxSeeAhead()))
+                );
+
+        return ahead;
+    }
+
+    public Vector ahead2()
+    {
+        return ahead().half();
     }
 
     /**

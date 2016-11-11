@@ -31,7 +31,7 @@ public class Targets
 
         public List<LivingUnit> getTargets()
         {
-            return targets;
+            return new LinkedList<>(targets);
         }
 
         private boolean renegadeOrAcademy(Unit unit)
@@ -44,6 +44,16 @@ public class Targets
             return renegadeOrAcademy(unit1)
                         && renegadeOrAcademy(unit2)
                         && unit1.getFaction() != unit2.getFaction();
+        }
+
+        public TargetsCollection friends()
+        {
+            List<LivingUnit>    foes = foes().list();
+            List<LivingUnit> targets = new LinkedList<>(getTargets());
+            targets.removeAll(foes);
+            List<LivingUnit> list = new LinkedList<LivingUnit>(targets);
+//            System.out.println("Targets " + targets.size() + ". Foes " + foes.size() + ". Friends " + list.size());
+            return new TargetsCollection(list);
         }
 
         public TargetsCollection foes()
@@ -60,7 +70,9 @@ public class Targets
                     iterator.remove();
                 }
             }
-            return new TargetsCollection(list);
+            TargetsCollection targets = new TargetsCollection(list);
+//            System.out.println("Foes " + targets.list().size());
+            return targets;
         }
 
         public LivingUnit firstOrNull()
@@ -183,15 +195,31 @@ public class Targets
         return new LinkedList<>(Arrays.asList(getWorld().getWizards()));
     }
 
+    public TargetsCollection allUnits()
+    {
+        return new TargetsCollection(buildingsList(), wizardsList(), minionsList(), treesList());
+    }
+
+    public TargetsCollection standingUnits()
+    {
+        return new TargetsCollection(treesList(), buildingsList());
+    }
 
     public TargetsCollection wizardsAndMinions()
     {
         return new TargetsCollection(wizardsList(), minionsList());
     }
 
+    public TargetsCollection trees()
+    {
+        return new TargetsCollection(treesList());
+    }
+
     public TargetsCollection wizards()
     {
-        return new TargetsCollection(wizardsList());
+        TargetsCollection targets = new TargetsCollection(wizardsList());
+        System.out.println("Wizards " + targets.list().size());
+        return targets;
     }
 
     /**

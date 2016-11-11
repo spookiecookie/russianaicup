@@ -22,6 +22,11 @@
         <element id="file-copy" path="$PROJECT_DIR$/src/main/java/StrategyShoot.java" />
         <element id="file-copy" path="$PROJECT_DIR$/src/main/java/StrategyShootNearest.java" />
         <element id="file-copy" path="$PROJECT_DIR$/src/main/java/Targets.java" />
+        <element id="file-copy" path="$PROJECT_DIR$/src/main/java/ComparatorDistance.java" />
+        <element id="file-copy" path="$PROJECT_DIR$/src/main/java/StrategyMoveStealth.java" />
+        <element id="file-copy" path="$PROJECT_DIR$/src/main/java/FollowFriendlyWizard.java" />
+        <element id="file-copy" path="$PROJECT_DIR$/src/main/java/ObstaclesTest.java" />
+        <element id="file-copy" path="$PROJECT_DIR$/src/main/java/StrategyMoveCollisionAvoidance.java" />
       </element>
     </root>
   </artifact>
