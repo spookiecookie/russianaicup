@@ -1,8 +1,16 @@
+import javafx.scene.paint.Color;
 import model.*;
 
 public final class MyStrategy
         implements Strategy
 {
+    public VisualClient client()
+    {
+        return client;
+    }
+
+    final static VisualClient client = new VisualClient("127.0.0.1", 31001);
+
     private IStrategy strategy;
      public IStrategy getStrategy()
     {
@@ -30,14 +38,21 @@ public final class MyStrategy
                                     .setDisableNearWall(true)
                                     .setWallDistanceFactor(3.0)
                                     .setTurnsSmoothly(true)
-                    )
-                    , new StrategyMoveCollisionAvoidance()
-                        .setParameters(new Parameters()
-                                .setMaxAvoidForce(100.0)
-                                .setTurnsSmoothly(false)
-                        )
+                   )
+//                    , new StrategyMoveCollisionAvoidance()
+//                    .setParameters(new Parameters()
+//                            .setMaxAvoidForce(4000.0)
+//                            .setMaxSeeAheadFactor(3.0)
+//                            .setTurnsSmoothly(false)
+//                    )
             );
 
+        if (world.getTickCount() > 50)
+        {
+            client().beginPost();
+            client().fillCircle(3800, 3800, 20.0, java.awt.Color.BLACK);
+            client().endPost();
+        }
         setStrategy(strategy);
         getStrategy().run(self, world, game, move);
     }
